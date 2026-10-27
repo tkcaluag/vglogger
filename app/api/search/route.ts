@@ -2,6 +2,7 @@ import { queryIgdb } from "@/lib/igdb";
 import { getIgdbCoverImageUrl } from "@/lib/igdb-image";
 
 type IgdbGame = {
+  id: number;
   name: string;
   cover?: { url?: string } | null;
 };
@@ -21,11 +22,12 @@ export async function GET(request: Request) {
   try {
     const games = await queryIgdb<IgdbGame>(
       "games",
-      `search "${escapedSearchTerm}"; fields name, cover.url; limit 10;`,
+      `search "${escapedSearchTerm}"; fields id, name, cover.url; limit 10;`,
     );
 
     return Response.json(
       games.map((game) => ({
+        id: game.id,
         name: game.name,
         coverImage: getIgdbCoverImageUrl(game.cover?.url),
       })),

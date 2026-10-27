@@ -1,4 +1,5 @@
 import "server-only";
+import { connection } from "next/server";
 
 const TWITCH_TOKEN_URL = "https://id.twitch.tv/oauth2/token";
 const IGDB_API_URL = "https://api.igdb.com/v4";
@@ -47,6 +48,9 @@ async function getAccessToken(): Promise<string> {
 }
 
 export async function queryIgdb<T>(endpoint: string, query: string): Promise<T[]> {
+
+  await connection();
+
   if (!/^[a-z][a-z0-9_]*$/i.test(endpoint)) {
     throw new Error("IGDB endpoint must be a valid API resource name.");
   }

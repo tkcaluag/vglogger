@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useState, type FormEvent } from "react";
 
 export type Game = {
+  id: number;
   name: string;
   coverImage: string | null;
 };
@@ -47,7 +48,7 @@ export default function GameSearch({
 
   const sectionTitle = searchedQuery
     ? `Results for “${searchedQuery}”`
-    : "Popular games";
+    : "Most Popular";
 
   return (
     <main className="catalog-shell">
@@ -63,11 +64,11 @@ export default function GameSearch({
       </header>
 
       <section className="intro" aria-labelledby="page-title">
-        <p className="eyebrow">A library worth getting lost in</p>
+        <p className="eyebrow">Log all your games in one place</p>
         <h1 id="page-title">
-          Find your next
+          Find your
           <br />
-          <span>favorite game.</span>
+          <span>favorite games.</span>
         </h1>
         <form className="search-form" role="search" onSubmit={handleSearch}>
           <label className="visually-hidden" htmlFor="game-search">
@@ -90,7 +91,7 @@ export default function GameSearch({
       <section className="games-section" aria-labelledby="games-title">
         <div className="section-heading">
           <div>
-            <p className="eyebrow">The collection</p>
+            <p className="eyebrow">The Collection</p>
             <h2 id="games-title">{sectionTitle}</h2>
           </div>
           <span className="result-count">
@@ -105,7 +106,7 @@ export default function GameSearch({
         ) : games.length ? (
           <div className="game-grid" aria-live="polite">
             {games.map((game, index) => (
-              <article className="game-card" key={`${game.name}-${index}`}>
+              <Link className="game-card" href={`/games/${game.id}`} key={game.id}>
                 <div className="cover-frame">
                   {game.coverImage ? (
                     <Image
@@ -124,7 +125,7 @@ export default function GameSearch({
                   <span className="cover-index">{String(index + 1).padStart(2, "0")}</span>
                 </div>
                 <h3 title={game.name}>{game.name}</h3>
-              </article>
+              </Link>
             ))}
           </div>
         ) : (

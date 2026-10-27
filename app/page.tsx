@@ -11,14 +11,16 @@ async function PopularGames() {
 
   try {
     const popularGames = await queryIgdb<{
+      id: number;
       name: string;
       cover?: { url?: string } | null;
     }>(
       "games",
-      "fields name, cover.url; sort rating_count desc; where rating_count > 100; limit 12;",
+      "fields id, name, cover.url; sort rating_count desc; where rating_count > 100; limit 12;",
     );
 
     initialGames = popularGames.map((game) => ({
+      id: game.id,
       name: game.name,
       coverImage: getIgdbCoverImageUrl(game.cover?.url),
     }));
