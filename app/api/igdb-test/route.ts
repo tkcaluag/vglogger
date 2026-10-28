@@ -1,9 +1,7 @@
-import { queryIgdb } from "@/lib/igdb";
+import { createClient } from "@/lib/supabase/server";
 
 export async function GET() {
-  const games = await queryIgdb<{ id: number; name: string }>(
-    "games",
-    'search "zelda"; fields name; limit 5;'
-  );
-  return Response.json(games);
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("games").select("*").limit(1);
+  return Response.json({ data, error });
 }
