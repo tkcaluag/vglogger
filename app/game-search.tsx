@@ -52,17 +52,6 @@ export default function GameSearch({
 
   return (
     <main className="catalog-shell">
-      <header className="topbar">
-        <Link className="brand" href="/" aria-label="VGLogger home">
-          <span className="brand-mark">VG</span>
-          <span className="brand-name">vglogger</span>
-        </Link>
-        <span className="catalog-label">
-          <span className="status-dot" />
-          GAME CATALOG
-        </span>
-      </header>
-
       <section className="intro" aria-labelledby="page-title">
         <p className="eyebrow">Log all your games in one place</p>
         <h1 id="page-title">

@@ -17,13 +17,6 @@ type IgdbGame = {
 function GameLoading() {
   return (
     <main className="catalog-shell">
-      <header className="topbar">
-        <Link className="brand" href="/" aria-label="VGLogger home">
-          <span className="brand-mark">VG</span>
-          <span className="brand-name">vglogger</span>
-        </Link>
-        <span className="catalog-label">GAME DETAILS</span>
-      </header>
       <p className="game-loading" role="status">
         Loading game details...
       </p>
@@ -51,16 +44,7 @@ async function GameDetails({ params }: { params: Promise<{ id: string }> }) {
 
   return (
     <main className="catalog-shell">
-      <header className="topbar">
-        <Link className="brand" href="/" aria-label="VGLogger home">
-          <span className="brand-mark">VG</span>
-          <span className="brand-name">vglogger</span>
-        </Link>
-        <Link className="catalog-label back-link" href="/">
-          BACK TO CATALOG
-        </Link>
-      </header>
-
+      <Link className="catalog-label back-link" href="/">BACK TO CATALOG</Link>
       <article className="game-details">
         <div className="detail-cover">
           {coverImage ? (
