@@ -439,6 +439,121 @@ input:focus-visible {
   color: var(--muted);
 }
 
+.community-section {
+  padding: 28px 0 42px;
+  border-top: 1px solid var(--line);
+}
+
+.log-game-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 16px;
+  max-width: 760px;
+}
+
+.log-game-form .auth-message,
+.log-game-form label[for="log-review"],
+.log-game-form textarea,
+.log-game-form button {
+  grid-column: 1 / -1;
+}
+
+.log-game-form label {
+  margin-top: 5px;
+  color: #59635a;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.log-game-form select,
+.log-game-form input,
+.log-game-form textarea {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  color: var(--ink);
+  border: 1px solid #d5dcd2;
+  background: #fff;
+  font: inherit;
+  font-size: 14px;
+}
+
+.log-game-form textarea {
+  resize: vertical;
+}
+
+.log-game-form button {
+  min-height: 46px;
+  margin-top: 8px;
+  color: #fff;
+  border: 0;
+  background: var(--ink);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.log-game-form button:hover:not(:disabled) {
+  background: var(--accent);
+}
+
+.log-game-form button:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+.log-game-form .auth-message {
+  margin-bottom: 4px;
+}
+
+.login-prompt,
+.no-reviews {
+  margin: 0;
+  color: #59635a;
+  font-size: 14px;
+}
+
+.login-prompt a {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.review-list {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.review-card {
+  padding: 18px 20px;
+  border: 1px solid var(--line);
+  background: rgb(255 255 255 / 70%);
+}
+
+.review-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px 14px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.review-meta strong {
+  color: var(--ink);
+  font-size: 14px;
+}
+
+.review-card p {
+  margin: 12px 0 0;
+  color: #59635a;
+  font-size: 14px;
+  line-height: 1.65;
+  white-space: pre-line;
+}
+
 .login-shell {
   padding: 58px 0 76px;
 }
@@ -618,6 +733,10 @@ input:focus-visible {
   .auth-forms { grid-template-columns: 1fr; }
   .auth-card { padding: 20px; }
   .auth-header-actions { gap: 12px; }
+  .log-game-form { grid-template-columns: 1fr; }
+  .log-game-form label,
+  .log-game-form select,
+  .log-game-form input { grid-column: 1; }
   .game-details {
     grid-template-columns: 1fr;
     gap: 32px;
