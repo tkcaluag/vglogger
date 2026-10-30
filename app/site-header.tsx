@@ -36,7 +36,9 @@ export default async function SiteHeader() {
       </Link>
       {user ? (
         <div className="auth-header-actions">
-          <span className="catalog-label">{username}</span>
+          <Link className="catalog-label profile-header-link" href={`/u/${encodeURIComponent(username)}`}>
+            {username}
+          </Link>
           <form action={logOut}>
             <button className="logout-button" type="submit">Log out</button>
           </form>
