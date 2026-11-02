@@ -84,7 +84,11 @@ export default function GameSearch({
             <h2 id="games-title">{sectionTitle}</h2>
           </div>
           <span className="result-count">
-            {isLoading ? "SEARCHING" : initialLoading ? "LOADING" : `${games.length} GAMES`}
+            {isLoading
+              ? "SEARCHING"
+              : initialLoading
+                ? "LOADING"
+                : `${games.length} ${games.length === 1 ? "GAME" : "GAMES"}`}
           </span>
         </div>
 

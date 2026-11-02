@@ -63,6 +63,8 @@ async function ProfileDetails({
   const playedCount = logs.filter((log) => log.status === "played").length;
   const playingCount = logs.filter((log) => log.status === "playing").length;
   const backlogCount = logs.filter((log) => log.status === "backlog").length;
+  const wishlistCount = logs.filter((log) => log.status === "wishlist").length;
+  const droppedCount = logs.filter((log) => log.status === "dropped").length;
   const joinedDate = new Intl.DateTimeFormat("en", {
     dateStyle: "long",
     timeZone: "UTC",
@@ -94,15 +96,24 @@ async function ProfileDetails({
           <dt>Backlogged</dt>
           <dd>{backlogCount}</dd>
         </div>
+        <div>
+          <dt>Wishlist</dt>
+          <dd>{wishlistCount}</dd>
+        </div>
+        <div>
+          <dt>Dropped</dt>
+          <dd>{droppedCount}</dd>
+        </div>
       </dl>
 
       <section className="profile-games" aria-labelledby="profile-games-heading">
         <div className="section-heading">
           <div>
-            <p className="eyebrow">Their library</p>
-            <h2 id="profile-games-heading">Logged games</h2>
+            <p className="eyebrow">Game Log</p>
           </div>
-          <span className="result-count">{logs.length} GAMES</span>
+          <span className="result-count">
+            {logs.length} {logs.length === 1 ? "GAME" : "GAMES"}
+          </span>
         </div>
         {logs.length ? (
           <div className="game-grid">
@@ -118,6 +129,11 @@ async function ProfileDetails({
                   key={`${game.igdb_id}-${index}`}
                 >
                   <div className="cover-frame">
+                    <span className={`profile-game-status profile-game-status--${log.status}`}>
+                      {log.status === "backlog"
+                        ? "Backlog"
+                        : log.status.charAt(0).toUpperCase() + log.status.slice(1)}
+                    </span>
                     {coverImage ? (
                       <Image
                         src={coverImage}

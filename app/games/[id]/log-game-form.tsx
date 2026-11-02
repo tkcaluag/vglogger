@@ -8,6 +8,7 @@ const STATUSES = [
   { value: "playing", label: "Playing" },
   { value: "backlog", label: "Backlog" },
   { value: "wishlist", label: "Wishlist" },
+  { value: "dropped", label: "Dropped" },
 ] as const;
 
 const RATINGS = Array.from({ length: 10 }, (_, index) => (index + 1) / 2);

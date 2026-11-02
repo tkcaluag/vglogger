@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { queryIgdb } from "@/lib/igdb";
 import { getIgdbCoverImageUrl } from "@/lib/igdb-image";
 
-const LOG_STATUSES = ["played", "playing", "backlog", "wishlist"] as const;
+const LOG_STATUSES = ["played", "playing", "backlog", "wishlist", "dropped"] as const;
 const MAX_REVIEW_LENGTH = 5000;
 
 type GameForLog = {
