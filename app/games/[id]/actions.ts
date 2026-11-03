@@ -54,7 +54,9 @@ export async function saveGameLog(
     error: authError,
   } = await supabase.auth.getUser();
 
-  if (authError && authError.name !== "AuthSessionMissingError") throw authError;
+  if (authError && authError.name !== "AuthSessionMissingError") {
+    return { error: "Could not save your game log. Please try again." };
+  }
   if (!user) return { error: "Log in to save this game to your library." };
 
   if (!/^\d+$/.test(gameId) || !Number.isSafeInteger(Number(gameId))) {
@@ -104,7 +106,9 @@ export async function saveGameLog(
     },
     { onConflict: "igdb_id", ignoreDuplicates: true },
   );
-  if (gameError) throw gameError;
+  if (gameError) {
+    return { error: "Could not save your game log. Please try again." };
+  }
 
   const { error: logError } = await supabase.from("logs").upsert(
     {
@@ -117,8 +121,46 @@ export async function saveGameLog(
     },
     { onConflict: "user_id,game_id" },
   );
-  if (logError) throw logError;
+  if (logError) {
+    return { error: "Could not save your game log. Please try again." };
+  }
 
   revalidatePath(`/games/${igdbId}`);
   return { success: "Your game log has been saved." };
+}
+
+export async function deleteGameLog(
+  gameId: string,
+  _previousState: { error?: string; success?: string },
+  _formData: FormData,
+): Promise<{ error?: string; success?: string }> {
+  void _previousState;
+  void _formData;
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError && authError.name !== "AuthSessionMissingError") {
+    return { error: "Could not delete your game log. Please try again." };
+  }
+  if (!user) return { error: "Log in to remove this game from your library." };
+  if (!/^\d+$/.test(gameId) || !Number.isSafeInteger(Number(gameId))) {
+    return { error: "This game has an invalid ID." };
+  }
+
+  const { error } = await supabase
+    .from("logs")
+    .delete()
+    .eq("user_id", user.id)
+    .eq("game_id", Number(gameId));
+
+  if (error) {
+    return { error: "Could not delete your game log. Please try again." };
+  }
+
+  revalidatePath(`/games/${gameId}`);
+  return { success: "Your game log has been removed." };
 }

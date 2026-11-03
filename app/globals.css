@@ -435,6 +435,28 @@ input:focus-visible {
   padding-top: 32px;
 }
 
+.profile-status-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 22px;
+}
+
+.profile-status-tabs a {
+  padding: 8px 12px;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.profile-status-tabs a[aria-current="page"] {
+  color: #fff;
+  border-color: var(--ink);
+  background: var(--ink);
+}
+
 .profile-game-rating {
   margin: 5px 0 0;
   color: var(--muted);
@@ -625,6 +647,35 @@ input:focus-visible {
 
 .log-game-form .auth-message {
   margin-bottom: 4px;
+}
+
+.delete-log-form {
+  max-width: 760px;
+  margin-top: 12px;
+}
+
+.delete-log-form .auth-message {
+  margin: 0 0 10px;
+}
+
+.delete-log-form button {
+  min-height: 42px;
+  padding: 0 14px;
+  color: #8d3022;
+  border: 1px solid #d9a39a;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.delete-log-form button:hover:not(:disabled) {
+  background: #fae9e5;
+}
+
+.delete-log-form button:disabled {
+  cursor: wait;
+  opacity: 0.6;
 }
 
 .login-prompt,

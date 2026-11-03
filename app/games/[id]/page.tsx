@@ -6,6 +6,7 @@ import { Suspense } from "react";
 import { getIgdbCoverImageUrl } from "@/lib/igdb-image";
 import { queryIgdb } from "@/lib/igdb";
 import { createClient } from "@/lib/supabase/server";
+import DeleteGameLogButton from "./delete-game-log-button";
 import LogGameForm from "./log-game-form";
 
 type IgdbGame = {
@@ -154,17 +155,20 @@ async function GameDetails({ params }: { params: Promise<{ id: string }> }) {
           </div>
         </div>
         {user ? (
-          <LogGameForm
-            gameId={id}
-            initialStatus={ownLog?.status}
-            initialRating={
-              ownLog?.rating === null || ownLog?.rating === undefined
-                ? ""
-                : Number(ownLog.rating).toFixed(1)
-            }
-            initialReview={ownLog?.review ?? ""}
-            initialPlayedOn={ownLog?.played_on ?? ""}
-          />
+          <>
+            <LogGameForm
+              gameId={id}
+              initialStatus={ownLog?.status}
+              initialRating={
+                ownLog?.rating === null || ownLog?.rating === undefined
+                  ? ""
+                  : Number(ownLog.rating).toFixed(1)
+              }
+              initialReview={ownLog?.review ?? ""}
+              initialPlayedOn={ownLog?.played_on ?? ""}
+            />
+            {ownLog ? <DeleteGameLogButton gameId={id} /> : null}
+          </>
         ) : (
           <p className="login-prompt">
             <Link href="/login">Log in</Link> to add this game to your library.

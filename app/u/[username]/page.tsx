@@ -24,6 +24,15 @@ type ProfileLog = {
   games: LoggedGame | LoggedGame[] | null;
 };
 
+const PROFILE_STATUSES = [
+  { value: "all", label: "All" },
+  { value: "played", label: "Played" },
+  { value: "playing", label: "Playing" },
+  { value: "backlog", label: "Backlog" },
+  { value: "wishlist", label: "Wishlist" },
+  { value: "dropped", label: "Dropped" },
+] as const;
+
 function ProfileLoading() {
   return (
     <main className="catalog-shell">
@@ -34,12 +43,18 @@ function ProfileLoading() {
 
 async function ProfileDetails({
   params,
+  searchParams,
 }: {
   params: Promise<{ username: string }>;
+  searchParams: Promise<{ status?: string | string[] }>;
 }) {
   await connection();
 
-  const { username } = await params;
+  const [{ username }, query] = await Promise.all([params, searchParams]);
+  const requestedStatus = Array.isArray(query.status) ? "" : query.status;
+  const selectedStatus =
+    PROFILE_STATUSES.find((status) => status.value === requestedStatus)?.value ??
+    "all";
   const supabase = await createClient();
   const { data: profileData, error: profileError } = await supabase
     .from("profiles")
@@ -60,6 +75,10 @@ async function ProfileDetails({
   if (logsError) throw logsError;
 
   const logs = (logData ?? []) as ProfileLog[];
+  const visibleLogs =
+    selectedStatus === "all"
+      ? logs
+      : logs.filter((log) => log.status === selectedStatus);
   const playedCount = logs.filter((log) => log.status === "played").length;
   const playingCount = logs.filter((log) => log.status === "playing").length;
   const backlogCount = logs.filter((log) => log.status === "backlog").length;
@@ -112,12 +131,30 @@ async function ProfileDetails({
             <p className="eyebrow">Game Log</p>
           </div>
           <span className="result-count">
-            {logs.length} {logs.length === 1 ? "GAME" : "GAMES"}
+            {visibleLogs.length} {visibleLogs.length === 1 ? "GAME" : "GAMES"}
           </span>
         </div>
-        {logs.length ? (
+        <nav className="profile-status-tabs" aria-label="Filter games by status">
+          {PROFILE_STATUSES.map((status) => {
+            const href =
+              status.value === "all"
+                ? `/u/${encodeURIComponent(profile.username)}`
+                : `/u/${encodeURIComponent(profile.username)}?status=${status.value}`;
+
+            return (
+              <Link
+                key={status.value}
+                href={href}
+                aria-current={selectedStatus === status.value ? "page" : undefined}
+              >
+                {status.label}
+              </Link>
+            );
+          })}
+        </nav>
+        {visibleLogs.length ? (
           <div className="game-grid">
-            {logs.map((log, index) => {
+            {visibleLogs.map((log, index) => {
               const game = Array.isArray(log.games) ? log.games[0] : log.games;
               if (!game) return null;
 
@@ -159,7 +196,11 @@ async function ProfileDetails({
             })}
           </div>
         ) : (
-          <p className="no-reviews">No games logged yet.</p>
+          <p className="no-reviews">
+            {selectedStatus === "all"
+              ? "No games logged yet."
+              : `No ${selectedStatus} games yet.`}
+          </p>
         )}
       </section>
     </main>
@@ -168,12 +209,14 @@ async function ProfileDetails({
 
 export default function ProfilePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ username: string }>;
+  searchParams: Promise<{ status?: string | string[] }>;
 }) {
   return (
     <Suspense fallback={<ProfileLoading />}>
-      <ProfileDetails params={params} />
+      <ProfileDetails params={params} searchParams={searchParams} />
     </Suspense>
   );
 }
