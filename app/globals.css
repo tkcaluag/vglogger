@@ -587,6 +587,120 @@ input:focus-visible {
   border-top: 1px solid var(--line);
 }
 
+.community-rating-summary {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.6fr) minmax(240px, 1fr);
+  gap: 32px;
+  max-width: 760px;
+  margin-bottom: 32px;
+}
+
+.community-stat-label,
+.community-rating-count {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.community-average {
+  margin: 7px 0 3px;
+  font-size: 34px;
+  font-weight: 720;
+  line-height: 1.1;
+}
+
+.community-average span {
+  color: var(--muted);
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.rating-distribution {
+  display: grid;
+  gap: 5px;
+}
+
+.rating-distribution-row {
+  display: grid;
+  grid-template-columns: 35px minmax(0, 1fr) 24px;
+  align-items: center;
+  gap: 9px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.rating-distribution-row > span:last-child {
+  text-align: right;
+}
+
+.rating-distribution-track {
+  height: 7px;
+  overflow: hidden;
+  background: #e3e8e1;
+}
+
+.rating-distribution-track span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+
+.community-subheading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.community-subheading h3 {
+  margin: 0;
+  font-size: 17px;
+}
+
+.community-subheading span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.community-skeleton {
+  display: grid;
+  gap: 12px;
+  max-width: 760px;
+}
+
+.community-skeleton-label {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.community-skeleton-line,
+.community-skeleton-card {
+  display: block;
+  background: linear-gradient(90deg, #e5e9e3 25%, #f0f2ee 50%, #e5e9e3 75%);
+  background-size: 200% 100%;
+  animation: community-skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+.community-skeleton-line {
+  width: 52%;
+  height: 20px;
+}
+
+.community-skeleton-line--short {
+  width: 28%;
+  height: 14px;
+}
+
+.community-skeleton-card {
+  height: 90px;
+}
+
+@keyframes community-skeleton-pulse {
+  to { background-position: -200% 0; }
+}
+
 .log-game-form {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -716,6 +830,17 @@ input:focus-visible {
 .review-meta strong {
   color: var(--ink);
   font-size: 14px;
+}
+
+.review-meta a {
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.review-meta a:hover {
+  color: var(--accent);
 }
 
 .review-card p {
@@ -914,6 +1039,7 @@ input:focus-visible {
   .profile-stats dt { font-size: 11px; }
   .profile-games { padding-top: 26px; }
   .log-game-form { grid-template-columns: 1fr; }
+  .community-rating-summary { grid-template-columns: 1fr; gap: 20px; }
   .log-game-form label,
   .log-game-form select,
   .log-game-form input { grid-column: 1; }

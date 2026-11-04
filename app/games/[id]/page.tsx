@@ -7,6 +7,7 @@ import { getIgdbCoverImageUrl } from "@/lib/igdb-image";
 import { queryIgdb } from "@/lib/igdb";
 import { createClient } from "@/lib/supabase/server";
 import DeleteGameLogButton from "./delete-game-log-button";
+import GameCommunity, { CommunityLoading } from "./community-section";
 import LogGameForm from "./log-game-form";
 
 type IgdbGame = {
@@ -24,15 +25,6 @@ type GameLog = {
   rating: number | string | null;
   review: string | null;
   played_on: string | null;
-};
-
-type RecentReview = {
-  status: string;
-  rating: number | string | null;
-  review: string;
-  played_on: string | null;
-  created_at: string;
-  profiles: { username: string } | { username: string }[] | null;
 };
 
 function GameLoading() {
@@ -73,21 +65,10 @@ async function GameDetails({ params }: { params: Promise<{ id: string }> }) {
         .eq("game_id", game.id)
         .maybeSingle()
     : Promise.resolve({ data: null, error: null });
-  let reviewsQuery = supabase
-    .from("logs")
-    .select("status, rating, review, played_on, created_at, profiles(username)")
-    .eq("game_id", game.id)
-    .not("review", "is", null)
-    .order("created_at", { ascending: false })
-    .limit(10);
-  if (user) reviewsQuery = reviewsQuery.neq("user_id", user.id);
-
-  const [ownLogResult, reviewsResult] = await Promise.all([ownLogQuery, reviewsQuery]);
+  const ownLogResult = await ownLogQuery;
   if (ownLogResult.error) throw ownLogResult.error;
-  if (reviewsResult.error) throw reviewsResult.error;
 
   const ownLog = ownLogResult.data as GameLog | null;
-  const reviews = (reviewsResult.data ?? []) as RecentReview[];
   const coverImage = getIgdbCoverImageUrl(game.cover?.url);
   const releaseDate = game.first_release_date
     ? new Intl.DateTimeFormat("en", { dateStyle: "long", timeZone: "UTC" }).format(
@@ -175,44 +156,9 @@ async function GameDetails({ params }: { params: Promise<{ id: string }> }) {
           </p>
         )}
       </section>
-
-      <section className="community-section reviews-section" aria-labelledby="reviews-heading">
-        <div className="section-heading">
-          <div>
-            <p className="eyebrow">From the community</p>
-            <h2 id="reviews-heading">Recent reviews</h2>
-          </div>
-        </div>
-        {reviews.length ? (
-          <ul className="review-list">
-            {reviews.map((review, index) => {
-              const profile = Array.isArray(review.profiles)
-                ? review.profiles[0]
-                : review.profiles;
-              const username = profile?.username ?? "Player";
-
-              return (
-                <li className="review-card" key={`${username}-${index}`}>
-                  <div className="review-meta">
-                    <strong>{username}</strong>
-                    {review.rating !== null ? (
-                      <span>{Number(review.rating).toFixed(1)} / 5</span>
-                    ) : null}
-                    {review.played_on ? (
-                      <time dateTime={review.played_on}>
-                        Played {review.played_on}
-                      </time>
-                    ) : null}
-                  </div>
-                  <p>{review.review}</p>
-                </li>
-              );
-            })}
-          </ul>
-        ) : (
-          <p className="no-reviews">No reviews yet.</p>
-        )}
-      </section>
+      <Suspense fallback={<CommunityLoading />}>
+        <GameCommunity gameId={game.id} />
+      </Suspense>
     </main>
   );
 }
