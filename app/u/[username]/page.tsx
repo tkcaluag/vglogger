@@ -19,6 +19,7 @@ type LoggedGame = {
 };
 
 type ProfileLog = {
+  created_at: string;
   status: string;
   rating: number | string | null;
   games: LoggedGame | LoggedGame[] | null;
@@ -33,6 +34,25 @@ const PROFILE_STATUSES = [
   { value: "dropped", label: "Dropped" },
 ] as const;
 
+const PROFILE_SORTS = [
+  { value: "recent", label: "Most recent" },
+  { value: "rating", label: "Highest rated" },
+  { value: "name", label: "A to Z" },
+] as const;
+
+function getLoggedGame(log: ProfileLog) {
+  return Array.isArray(log.games) ? log.games[0] : log.games;
+}
+
+function getProfileHref(username: string, status: string, sort: string) {
+  const params = new URLSearchParams();
+  if (status !== "all") params.set("status", status);
+  if (sort !== "recent") params.set("sort", sort);
+
+  const query = params.toString();
+  return `/u/${encodeURIComponent(username)}${query ? `?${query}` : ""}`;
+}
+
 function ProfileLoading() {
   return (
     <main className="catalog-shell">
@@ -46,15 +66,21 @@ async function ProfileDetails({
   searchParams,
 }: {
   params: Promise<{ username: string }>;
-  searchParams: Promise<{ status?: string | string[] }>;
+  searchParams: Promise<{
+    status?: string | string[];
+    sort?: string | string[];
+  }>;
 }) {
   await connection();
 
   const [{ username }, query] = await Promise.all([params, searchParams]);
   const requestedStatus = Array.isArray(query.status) ? "" : query.status;
+  const requestedSort = Array.isArray(query.sort) ? "" : query.sort;
   const selectedStatus =
     PROFILE_STATUSES.find((status) => status.value === requestedStatus)?.value ??
     "all";
+  const selectedSort =
+    PROFILE_SORTS.find((sort) => sort.value === requestedSort)?.value ?? "recent";
   const supabase = await createClient();
   const { data: profileData, error: profileError } = await supabase
     .from("profiles")
@@ -68,17 +94,39 @@ async function ProfileDetails({
   const profile = profileData as Profile;
   const { data: logData, error: logsError } = await supabase
     .from("logs")
-    .select("status, rating, games(igdb_id, name, cover_url)")
+    .select("created_at, status, rating, games(igdb_id, name, cover_url)")
     .eq("user_id", profile.id)
     .order("created_at", { ascending: false });
 
   if (logsError) throw logsError;
 
   const logs = (logData ?? []) as ProfileLog[];
-  const visibleLogs =
+  const filteredLogs =
     selectedStatus === "all"
       ? logs
       : logs.filter((log) => log.status === selectedStatus);
+  const compareByRecent = (a: ProfileLog, b: ProfileLog) =>
+    new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+  const visibleLogs = [...filteredLogs].sort((a, b) => {
+    if (selectedSort === "rating") {
+      if (a.rating === null) return b.rating === null ? compareByRecent(a, b) : 1;
+      if (b.rating === null) return -1;
+      return Number(b.rating) - Number(a.rating) || compareByRecent(a, b);
+    }
+
+    if (selectedSort === "name") {
+      const aGame = getLoggedGame(a);
+      const bGame = getLoggedGame(b);
+      if (!aGame) return bGame ? 1 : compareByRecent(a, b);
+      if (!bGame) return -1;
+      return (
+        aGame.name.localeCompare(bGame.name, undefined, { sensitivity: "base" }) ||
+        compareByRecent(a, b)
+      );
+    }
+
+    return compareByRecent(a, b);
+  });
   const playedCount = logs.filter((log) => log.status === "played").length;
   const playingCount = logs.filter((log) => log.status === "playing").length;
   const backlogCount = logs.filter((log) => log.status === "backlog").length;
@@ -136,15 +184,10 @@ async function ProfileDetails({
         </div>
         <nav className="profile-status-tabs" aria-label="Filter games by status">
           {PROFILE_STATUSES.map((status) => {
-            const href =
-              status.value === "all"
-                ? `/u/${encodeURIComponent(profile.username)}`
-                : `/u/${encodeURIComponent(profile.username)}?status=${status.value}`;
-
             return (
               <Link
                 key={status.value}
-                href={href}
+                href={getProfileHref(profile.username, status.value, selectedSort)}
                 aria-current={selectedStatus === status.value ? "page" : undefined}
               >
                 {status.label}
@@ -152,10 +195,24 @@ async function ProfileDetails({
             );
           })}
         </nav>
+        <div className="profile-sort-controls">
+          <span className="profile-sort-label">Sort by</span>
+          <nav className="profile-sort-options" aria-label="Sort games">
+            {PROFILE_SORTS.map((sort) => (
+              <Link
+                key={sort.value}
+                href={getProfileHref(profile.username, selectedStatus, sort.value)}
+                aria-current={selectedSort === sort.value ? "page" : undefined}
+              >
+                {sort.label}
+              </Link>
+            ))}
+          </nav>
+        </div>
         {visibleLogs.length ? (
           <div className="game-grid">
             {visibleLogs.map((log, index) => {
-              const game = Array.isArray(log.games) ? log.games[0] : log.games;
+              const game = getLoggedGame(log);
               if (!game) return null;
 
               const coverImage = getIgdbCoverImageUrl(game.cover_url);
@@ -212,7 +269,10 @@ export default function ProfilePage({
   searchParams,
 }: {
   params: Promise<{ username: string }>;
-  searchParams: Promise<{ status?: string | string[] }>;
+  searchParams: Promise<{
+    status?: string | string[];
+    sort?: string | string[];
+  }>;
 }) {
   return (
     <Suspense fallback={<ProfileLoading />}>

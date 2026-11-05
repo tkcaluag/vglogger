@@ -457,6 +457,36 @@ input:focus-visible {
   background: var(--ink);
 }
 
+.profile-sort-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: -8px 0 22px;
+}
+
+.profile-sort-label {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.profile-sort-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.profile-sort-options a {
+  color: var(--muted);
+  font-size: 12px;
+  text-decoration: none;
+}
+
+.profile-sort-options a[aria-current="page"] {
+  color: var(--ink);
+  font-weight: 700;
+}
+
 .profile-game-rating {
   margin: 5px 0 0;
   color: var(--muted);
