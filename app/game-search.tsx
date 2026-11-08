@@ -10,14 +10,20 @@ export type Game = {
   coverImage: string | null;
 };
 
+export type GameSection = {
+  title: string;
+  games: Game[];
+  error?: string;
+};
+
 export default function GameSearch({
-  initialGames,
+  initialSections,
   initialLoading = false,
 }: {
-  initialGames: Game[];
+  initialSections: GameSection[];
   initialLoading?: boolean;
 }) {
-  const [games, setGames] = useState(initialGames);
+  const [searchResults, setSearchResults] = useState<Game[] | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [searchedQuery, setSearchedQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -37,7 +43,7 @@ export default function GameSearch({
       if (!response.ok) throw new Error("Search request failed");
 
       const results = (await response.json()) as Game[];
-      setGames(results);
+      setSearchResults(results);
       setSearchedQuery(query);
     } catch {
       setError("The game catalog could not be reached. Try again shortly.");
@@ -45,10 +51,6 @@ export default function GameSearch({
       setIsLoading(false);
     }
   }
-
-  const sectionTitle = searchedQuery
-    ? `Results for “${searchedQuery}”`
-    : "Most Popular";
 
   return (
     <main className="catalog-shell">
@@ -77,68 +79,109 @@ export default function GameSearch({
         </form>
       </section>
 
-      <section className="games-section" aria-labelledby="games-title">
-        <div className="section-heading">
-          <div>
-            <p className="eyebrow">The Collection</p>
-            <h2 id="games-title">{sectionTitle}</h2>
-          </div>
-          <span className="result-count">
-            {isLoading
-              ? "SEARCHING"
-              : initialLoading
-                ? "LOADING"
-                : `${games.length} ${games.length === 1 ? "GAME" : "GAMES"}`}
-          </span>
-        </div>
+      {error ? (
+        <p className="feedback-message" role="alert">
+          {error}
+        </p>
+      ) : null}
 
-        {error ? (
-          <p className="feedback-message" role="alert">
-            {error}
-          </p>
-        ) : games.length ? (
-          <div className="game-grid" aria-live="polite">
-            {games.map((game, index) => (
-              <Link className="game-card" href={`/games/${game.id}`} key={game.id}>
-                <div className="cover-frame">
-                  {game.coverImage ? (
-                    <Image
-                      src={game.coverImage}
-                      alt={`${game.name} cover art`}
-                      fill
-                      unoptimized
-                      priority={index < 4}
-                      sizes="(max-width: 560px) 45vw, (max-width: 900px) 30vw, 22vw"
-                    />
-                  ) : (
-                    <div className="cover-fallback" aria-label="No cover art available">
-                      <span>{game.name.slice(0, 1).toUpperCase()}</span>
-                    </div>
-                  )}
-                  <span className="cover-index">{String(index + 1).padStart(2, "0")}</span>
-                </div>
-                <h3 title={game.name}>{game.name}</h3>
-              </Link>
-            ))}
+      {searchResults !== null ? (
+        <section className="games-section" aria-labelledby="search-results-title">
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">The Collection</p>
+              <h2 id="search-results-title">Results for “{searchedQuery}”</h2>
+            </div>
+            <span className="result-count">
+              {isLoading
+                ? "SEARCHING"
+                : `${searchResults.length} ${searchResults.length === 1 ? "GAME" : "GAMES"}`}
+            </span>
           </div>
-        ) : (
-          <div className="empty-state" aria-live="polite">
-            <span className="empty-mark">VG</span>
-            <p>
-              {initialLoading
-                ? "Loading games..."
-                : searchedQuery
-                ? `No games found for “${searchedQuery}”.`
-                : "Search the catalog to find a game."}
-            </p>
-          </div>
-        )}
-      </section>
+
+          {searchResults.length ? (
+            <div className="game-grid" aria-live="polite">
+              {searchResults.map((game, index) => (
+                <GameCard game={game} index={index} key={game.id} />
+              ))}
+            </div>
+          ) : (
+            <div className="empty-state" aria-live="polite">
+              <span className="empty-mark">VG</span>
+              <p>No games found for “{searchedQuery}”.</p>
+            </div>
+          )}
+        </section>
+      ) : (
+        initialSections.map((section, sectionIndex) => (
+          <section
+            className="games-section"
+            aria-labelledby={`games-title-${sectionIndex}`}
+            key={section.title}
+          >
+            <div className="section-heading">
+              <div>
+                <p className="eyebrow">The Collection</p>
+                <h2 id={`games-title-${sectionIndex}`}>{section.title}</h2>
+              </div>
+              <span className="result-count">
+                {initialLoading
+                  ? "LOADING"
+                  : section.error
+                    ? "UNAVAILABLE"
+                    : `${section.games.length} ${section.games.length === 1 ? "GAME" : "GAMES"}`}
+              </span>
+            </div>
+
+            {section.error ? (
+              <p className="feedback-message" role="alert">
+                {section.error}
+              </p>
+            ) : section.games.length ? (
+              <div className="game-grid">
+                {section.games.map((game, index) => (
+                  <GameCard game={game} index={index} key={game.id} />
+                ))}
+              </div>
+            ) : (
+              <div className="empty-state">
+                <span className="empty-mark">VG</span>
+                <p>{initialLoading ? "Loading games..." : "No games to show."}</p>
+              </div>
+            )}
+          </section>
+        ))
+      )}
 
       <footer className="page-footer">
         <span>VGLOGGER</span>
         <span>BUILT FOR YOUR BACKLOG</span>
       </footer>
     </main>
+  );
+}
+
+function GameCard({ game, index }: { game: Game; index: number }) {
+  return (
+    <Link className="game-card" href={`/games/${game.id}`}>
+      <div className="cover-frame">
+        {game.coverImage ? (
+          <Image
+            src={game.coverImage}
+            alt={`${game.name} cover art`}
+            fill
+            unoptimized
+            priority={index < 4}
+            sizes="(max-width: 560px) 45vw, (max-width: 900px) 30vw, 22vw"
+          />
+        ) : (
+          <div className="cover-fallback" aria-label="No cover art available">
+            <span>{game.name.slice(0, 1).toUpperCase()}</span>
+          </div>
+        )}
+        <span className="cover-index">{String(index + 1).padStart(2, "0")}</span>
+      </div>
+      <h3 title={game.name}>{game.name}</h3>
+    </Link>
   );
 }
