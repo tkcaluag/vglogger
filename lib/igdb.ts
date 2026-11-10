@@ -73,7 +73,10 @@ export async function queryIgdb<T>(endpoint: string, query: string): Promise<T[]
   });
 
   if (!response.ok) {
-    throw new Error(`IGDB ${endpoint} request failed with status ${response.status}.`);
+    const errorDetails = (await response.text()).slice(0, 500);
+    throw new Error(
+      `IGDB ${endpoint} request failed with status ${response.status}: ${errorDetails}`,
+    );
   }
 
   return (await response.json()) as T[];
