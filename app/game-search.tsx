@@ -21,6 +21,8 @@ type PlatformOption = {
   name: string;
 };
 
+const SEARCH_PAGE_SIZE = 10;
+
 export default function GameSearch({
   initialSections,
   initialLoading = false,
@@ -29,6 +31,10 @@ export default function GameSearch({
   initialLoading?: boolean;
 }) {
   const [searchResults, setSearchResults] = useState<Game[] | null>(null);
+  const [activeSearchParams, setActiveSearchParams] = useState("");
+  const [hasMoreResults, setHasMoreResults] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [maxKnownPage, setMaxKnownPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
   const [searchedQuery, setSearchedQuery] = useState("");
   const [searchedWithFilters, setSearchedWithFilters] = useState(false);
@@ -39,6 +45,7 @@ export default function GameSearch({
   const [platformLoadError, setPlatformLoadError] = useState("");
   const [isLoadingPlatforms, setIsLoadingPlatforms] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingPage, setIsLoadingPage] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -87,7 +94,8 @@ export default function GameSearch({
       if (selectedPlatform) searchParams.set("platform", selectedPlatform);
       if (selectedYear) searchParams.set("year", selectedYear);
 
-      const response = await fetch(`/api/search?${searchParams.toString()}`);
+      const params = searchParams.toString();
+      const response = await fetch(`/api/search?${params}`);
       if (!response.ok) {
         const body = (await response.json()) as { error?: unknown };
         setError(
@@ -98,8 +106,12 @@ export default function GameSearch({
         return;
       }
 
-      const results = (await response.json()) as Game[];
-      setSearchResults(results);
+      const resultPage = (await response.json()) as { games: Game[]; hasMore: boolean };
+      setSearchResults(resultPage.games);
+      setActiveSearchParams(params);
+      setHasMoreResults(resultPage.hasMore);
+      setCurrentPage(1);
+      setMaxKnownPage(1);
       setSearchedQuery(query);
       setSearchedWithFilters(Boolean(selectedGenre || selectedPlatform || selectedYear));
     } catch {
@@ -108,6 +120,55 @@ export default function GameSearch({
       setIsLoading(false);
     }
   }
+
+  async function handlePageChange(page: number) {
+    if (
+      !activeSearchParams ||
+      isLoading ||
+      isLoadingPage ||
+      page < 1 ||
+      page > maxKnownPage + 1 ||
+      (page === maxKnownPage + 1 && (!hasMoreResults || currentPage !== maxKnownPage)) ||
+      page === currentPage
+    ) {
+      return;
+    }
+
+    setIsLoadingPage(true);
+    setError("");
+
+    try {
+      const searchParams = new URLSearchParams(activeSearchParams);
+      searchParams.set("offset", String((page - 1) * SEARCH_PAGE_SIZE));
+      const response = await fetch(`/api/search?${searchParams.toString()}`);
+      if (!response.ok) {
+        const body = (await response.json()) as { error?: unknown };
+        setError(
+          typeof body.error === "string"
+            ? body.error
+            : "The game catalog could not be reached. Try again shortly.",
+        );
+        return;
+      }
+      const resultPage = (await response.json()) as { games: Game[]; hasMore: boolean };
+      setSearchResults(resultPage.games);
+      setHasMoreResults(resultPage.hasMore);
+      setCurrentPage(page);
+      setMaxKnownPage((knownPage) => Math.max(knownPage, page));
+    } catch {
+      setError("The game catalog could not be reached. Try again shortly.");
+    } finally {
+      setIsLoadingPage(false);
+    }
+  }
+
+  const pageCount =
+    maxKnownPage + (currentPage === maxKnownPage && hasMoreResults ? 1 : 0);
+  const firstVisiblePage = Math.max(1, Math.min(currentPage - 2, pageCount - 4));
+  const visiblePages = Array.from(
+    { length: Math.min(5, pageCount) },
+    (_, index) => firstVisiblePage + index,
+  );
 
   return (
     <main className="catalog-shell">
@@ -135,6 +196,7 @@ export default function GameSearch({
               type="submit"
               disabled={
                 isLoading ||
+                isLoadingPage ||
                 (!searchTerm.trim() && !genre.trim() && !platform && !year.trim())
               }
             >
@@ -211,16 +273,57 @@ export default function GameSearch({
             <span className="result-count">
               {isLoading
                 ? "SEARCHING"
-                : `${searchResults.length} ${searchResults.length === 1 ? "GAME" : "GAMES"}`}
+                : `PAGE ${currentPage} · ${searchResults.length} ${searchResults.length === 1 ? "GAME" : "GAMES"}`}
             </span>
           </div>
 
           {searchResults.length ? (
-            <div className="game-grid" aria-live="polite">
-              {searchResults.map((game, index) => (
-                <GameCard game={game} index={index} key={game.id} />
-              ))}
-            </div>
+            <>
+              <div className="game-grid" aria-live="polite">
+                {searchResults.map((game, index) => (
+                  <GameCard game={game} index={index} key={game.id} />
+                ))}
+              </div>
+              {pageCount > 1 ? (
+                <nav className="pagination" aria-label="Search result pages">
+                  <button
+                    className="pagination-button pagination-arrow"
+                    type="button"
+                    aria-label="Previous page"
+                    onClick={() => void handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1 || isLoading || isLoadingPage}
+                  >
+                    &larr;
+                  </button>
+                  {visiblePages.map((page) => (
+                    <button
+                      className="pagination-button"
+                      type="button"
+                      key={page}
+                      aria-label={`Page ${page}`}
+                      aria-current={page === currentPage ? "page" : undefined}
+                      onClick={() => void handlePageChange(page)}
+                      disabled={isLoading || isLoadingPage || page === currentPage}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                  <button
+                    className="pagination-button pagination-arrow"
+                    type="button"
+                    aria-label="Next page"
+                    onClick={() => void handlePageChange(currentPage + 1)}
+                    disabled={
+                      isLoading ||
+                      isLoadingPage ||
+                      (currentPage === maxKnownPage && !hasMoreResults)
+                    }
+                  >
+                    &rarr;
+                  </button>
+                </nav>
+              ) : null}
+            </>
           ) : (
             <div className="empty-state" aria-live="polite">
               <span className="empty-mark">VG</span>

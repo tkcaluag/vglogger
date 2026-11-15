@@ -332,6 +332,47 @@ input:focus-visible {
   gap: 26px 18px;
 }
 
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 30px auto 0;
+}
+
+.pagination-button {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  background: rgb(255 255 255 / 84%);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: color 160ms ease, background 160ms ease, border-color 160ms ease;
+}
+
+.pagination-button:hover:not(:disabled) {
+  border-color: var(--ink);
+}
+
+.pagination-button[aria-current="page"] {
+  color: #fff;
+  border-color: var(--ink);
+  background: var(--ink);
+}
+
+.pagination-button:disabled:not([aria-current="page"]) {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.pagination-arrow {
+  font-size: 17px;
+}
+
 .game-card {
   min-width: 0;
   color: inherit;
