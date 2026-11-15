@@ -332,6 +332,28 @@ input:focus-visible {
   gap: 26px 18px;
 }
 
+.category-link-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  margin-top: 24px;
+  padding: 0 16px;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  background: rgb(255 255 255 / 84%);
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: color 160ms ease, background 160ms ease, border-color 160ms ease;
+}
+
+.category-link-button:hover {
+  color: #fff;
+  border-color: var(--ink);
+  background: var(--ink);
+}
+
 .pagination {
   display: flex;
   align-items: center;

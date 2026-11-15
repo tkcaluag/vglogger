@@ -2,14 +2,12 @@ import Link from "next/link";
 import { connection } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { logOut } from "./login/actions";
+import HomeLink from "./home-link";
 
 export function SiteHeaderFallback() {
   return (
     <header className="catalog-shell topbar">
-      <Link className="brand" href="/" aria-label="VGLogger home">
-        <span className="brand-mark">VG</span>
-        <span className="brand-name">vglogger</span>
-      </Link>
+      <HomeLink />
       <span className="catalog-label" aria-hidden="true" />
     </header>
   );
@@ -30,10 +28,7 @@ export default async function SiteHeader() {
 
   return (
     <header className="catalog-shell topbar">
-      <Link className="brand" href="/" aria-label="VGLogger home">
-        <span className="brand-mark">VG</span>
-        <span className="brand-name">vglogger</span>
-      </Link>
+      <HomeLink />
       {user ? (
         <div className="auth-header-actions">
           <Link className="catalog-label profile-header-link" href={`/u/${encodeURIComponent(username)}`}>

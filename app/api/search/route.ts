@@ -1,5 +1,6 @@
 import { queryIgdb } from "@/lib/igdb";
 import { getIgdbCoverImageUrl } from "@/lib/igdb-image";
+import { gameCategories, isGameCategorySlug } from "@/lib/game-categories";
 
 type IgdbGame = {
   id: number;
@@ -11,7 +12,7 @@ type IgdbNamedEntity = {
   id: number;
 };
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 12;
 const MAX_OFFSET = 10_000;
 
 function escapeIgdbString(value: string) {
@@ -27,10 +28,18 @@ export async function GET(request: Request) {
   const genre = searchParams.get("genre")?.trim();
   const platform = searchParams.get("platform")?.trim();
   const releaseYear = searchParams.get("year")?.trim();
+  const categoryParam = searchParams.get("category");
+  const category = categoryParam && isGameCategorySlug(categoryParam)
+    ? gameCategories[categoryParam]
+    : undefined;
   const offsetParam = searchParams.get("offset");
   const offset = offsetParam === null ? 0 : Number(offsetParam);
 
-  if (!searchTerm && !genre && !platform && !releaseYear) {
+  if (categoryParam && !category) {
+    return Response.json({ error: "Select a valid game category." }, { status: 400 });
+  }
+
+  if (!searchTerm && !genre && !platform && !releaseYear && !category) {
     return Response.json(
       { error: "Enter a game name or choose at least one search filter." },
       { status: 400 },
@@ -81,11 +90,13 @@ export async function GET(request: Request) {
         `first_release_date >= ${startOfYear} & first_release_date < ${startOfNextYear}`,
       );
     }
+    if (category) conditions.push(category.where);
     const whereClause = conditions.length ? `where ${conditions.join(" & ")}; ` : "";
+    const sortClause = category ? `sort ${category.sort}; ` : "";
 
     const games = await queryIgdb<IgdbGame>(
       "games",
-      `${searchTerm ? `search "${escapeIgdbString(searchTerm)}"; ` : ""}${whereClause}fields id, name, cover.url; limit ${PAGE_SIZE + 1}; offset ${offset};`,
+      `${searchTerm ? `search "${escapeIgdbString(searchTerm)}"; ` : ""}${whereClause}${sortClause}fields id, name, cover.url; limit ${PAGE_SIZE + 1}; offset ${offset};`,
     );
 
     return Response.json({

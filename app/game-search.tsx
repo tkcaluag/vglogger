@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
+import type { GameCategorySlug } from "@/lib/game-categories";
 
 export type Game = {
   id: number;
@@ -12,6 +13,7 @@ export type Game = {
 
 export type GameSection = {
   title: string;
+  slug?: GameCategorySlug;
   games: Game[];
   error?: string;
 };
@@ -21,20 +23,28 @@ type PlatformOption = {
   name: string;
 };
 
-const SEARCH_PAGE_SIZE = 10;
+const SEARCH_PAGE_SIZE = 12;
 
 export default function GameSearch({
   initialSections,
   initialLoading = false,
+  initialCategory,
 }: {
   initialSections: GameSection[];
   initialLoading?: boolean;
+  initialCategory?: { slug: GameCategorySlug; title: string };
 }) {
-  const [searchResults, setSearchResults] = useState<Game[] | null>(null);
-  const [activeSearchParams, setActiveSearchParams] = useState("");
+  const initialCategorySlug = initialCategory?.slug;
+  const [searchResults, setSearchResults] = useState<Game[] | null>(
+    initialCategory ? [] : null,
+  );
+  const [activeSearchParams, setActiveSearchParams] = useState(
+    initialCategory ? new URLSearchParams({ category: initialCategory.slug }).toString() : "",
+  );
   const [hasMoreResults, setHasMoreResults] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [maxKnownPage, setMaxKnownPage] = useState(1);
+  const [searchedCategory, setSearchedCategory] = useState(initialCategory?.title ?? "");
   const [searchTerm, setSearchTerm] = useState("");
   const [searchedQuery, setSearchedQuery] = useState("");
   const [searchedWithFilters, setSearchedWithFilters] = useState(false);
@@ -44,7 +54,7 @@ export default function GameSearch({
   const [platformOptions, setPlatformOptions] = useState<PlatformOption[]>([]);
   const [platformLoadError, setPlatformLoadError] = useState("");
   const [isLoadingPlatforms, setIsLoadingPlatforms] = useState(true);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(Boolean(initialCategory));
   const [isLoadingPage, setIsLoadingPage] = useState(false);
   const [error, setError] = useState("");
 
@@ -71,6 +81,44 @@ export default function GameSearch({
     void loadPlatforms();
     return () => abortController.abort();
   }, []);
+
+  useEffect(() => {
+    if (!initialCategorySlug) return;
+    const categorySlug = initialCategorySlug;
+
+    const abortController = new AbortController();
+
+    async function loadCategory() {
+      try {
+        const params = new URLSearchParams({ category: categorySlug });
+        const response = await fetch(`/api/search?${params.toString()}`, {
+          signal: abortController.signal,
+        });
+        if (!response.ok) {
+          const body = (await response.json()) as { error?: unknown };
+          setError(
+            typeof body.error === "string"
+              ? body.error
+              : "The game catalog could not be reached. Try again shortly.",
+          );
+          return;
+        }
+
+        const resultPage = (await response.json()) as { games: Game[]; hasMore: boolean };
+        setSearchResults(resultPage.games);
+        setHasMoreResults(resultPage.hasMore);
+      } catch {
+        if (!abortController.signal.aborted) {
+          setError("The game catalog could not be reached. Try again shortly.");
+        }
+      } finally {
+        if (!abortController.signal.aborted) setIsLoading(false);
+      }
+    }
+
+    void loadCategory();
+    return () => abortController.abort();
+  }, [initialCategorySlug]);
 
   async function handleSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -112,6 +160,7 @@ export default function GameSearch({
       setHasMoreResults(resultPage.hasMore);
       setCurrentPage(1);
       setMaxKnownPage(1);
+      setSearchedCategory("");
       setSearchedQuery(query);
       setSearchedWithFilters(Boolean(selectedGenre || selectedPlatform || selectedYear));
     } catch {
@@ -263,11 +312,13 @@ export default function GameSearch({
             <div>
               <p className="eyebrow">The Collection</p>
               <h2 id="search-results-title">
-                {searchedQuery
-                  ? `Results for “${searchedQuery}”`
-                  : searchedWithFilters
-                    ? "Filtered games"
-                    : "Game results"}
+                {searchedCategory
+                  ? searchedCategory
+                  : searchedQuery
+                    ? `Results for “${searchedQuery}”`
+                    : searchedWithFilters
+                      ? "Filtered games"
+                      : "Game results"}
               </h2>
             </div>
             <span className="result-count">
@@ -285,7 +336,10 @@ export default function GameSearch({
                 ))}
               </div>
               {pageCount > 1 ? (
-                <nav className="pagination" aria-label="Search result pages">
+                <nav
+                  className="pagination"
+                  aria-label={searchedCategory ? `${searchedCategory} pages` : "Search result pages"}
+                >
                   <button
                     className="pagination-button pagination-arrow"
                     type="button"
@@ -330,7 +384,9 @@ export default function GameSearch({
               <p>
                 {searchedQuery
                   ? `No games found for “${searchedQuery}”.`
-                  : "No games match the selected filters."}
+                  : searchedCategory
+                    ? `No ${searchedCategory.toLowerCase()} games found.`
+                    : "No games match the selected filters."}
               </p>
             </div>
           )}
@@ -372,6 +428,11 @@ export default function GameSearch({
                 <p>{initialLoading ? "Loading games..." : "No games to show."}</p>
               </div>
             )}
+            {section.slug ? (
+              <Link className="category-link-button" href={`/categories/${section.slug}`}>
+                View all {section.title.toLowerCase()}
+              </Link>
+            ) : null}
           </section>
         ))
       )}
